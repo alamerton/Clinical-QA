@@ -9,11 +9,11 @@ import re
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
 
-from utils.generation.call_gpt import call_gpt
-from utils.generation.call_mimic_iii import call_mimic_iii
-from utils.misc import select_capability_type
-from utils.generation.check_quality_with_gpt import check_quality_with_gpt
-from utils.generation.reasoning_QA import (
+from utils.generation.call_gpt import call_gpt  # noqa: E402
+from utils.generation.call_mimic_iii import call_mimic_iii  # noqa: E402
+from utils.misc import select_capability_type  # noqa: E402
+from utils.generation.check_quality_with_gpt import check_quality_with_gpt  # noqa: E402
+from utils.generation.reasoning_QA import (  # noqa: E402
     extract_discharge_summary_sections,
     get_initial_presentation,
     get_subsequent_steps,
@@ -25,8 +25,8 @@ NUMBER_OF_QA_PAIRS: int = 15
 # Control the ratio of reasoning and planning questions in the dataset
 # by setting the proportion of reasoning questions. They can be any
 # ratio.
-FACTUAL_Q_PROPORTION: int = 0
-REASONING_Q_PROPORTION: int = 100
+FACTUAL_Q_PROPORTION: int = 50
+REASONING_Q_PROPORTION: int = 50
 
 # Variable for starting the generation from a specific row in MIMIC-III.
 # Default value is 0. Set to 0 if generating new dataset.
@@ -110,7 +110,7 @@ def main():
                     checkpoint_path = checkpoint_directory_path + checkpoint_name
                     with open(f"{checkpoint_path}.json", "w") as json_file:
                         json.dump(dataset, json_file, indent=4)
-        else:
+        else:  # Reasoning QA
             # New approach: Extract sections using regex based on common MIMIC-III headings
             sections = extract_discharge_summary_sections(discharge_summary)
 

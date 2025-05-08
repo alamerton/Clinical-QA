@@ -27,6 +27,10 @@ def extract_discharge_summary_sections(discharge_summary):
         r"DISCHARGE INSTRUCTIONS:(.*?)(?=\n[A-Z]+ ?[A-Z]+:|\Z)",
     ]
 
+    # understand the meaning of each of these sections to present them to the LLM
+    # the information should be fed temporally, asking the LLM to predict the next step
+    # These section headings don't capture the range of headings present in the DS
+
     # Alternative approach: find all section headers first, then extract sections
     section_header_pattern = r"\n([A-Z][A-Z ]*):"
     section_headers = re.findall(section_header_pattern, discharge_summary)
