@@ -14,13 +14,12 @@ from utils.generation.call_mimic_iii import call_mimic_iii  # noqa: E402
 from utils.misc import select_capability_type  # noqa: E402
 from utils.generation.check_quality_with_gpt import check_quality_with_gpt  # noqa: E402
 from utils.generation.reasoning_QA import (  # noqa: E402
-    extract_discharge_summary_sections,
-    get_initial_presentation,
-    get_subsequent_steps,
+    chunk_discharge_summary,
+    create_QA_set,
 )
 
 # Dataset size
-NUMBER_OF_QA_PAIRS: int = 15
+NUMBER_OF_QA_PAIRS: int = 5
 
 # Control the ratio of reasoning and planning questions in the dataset
 # by setting the proportion of reasoning questions. They can be any
@@ -110,46 +109,14 @@ def main():
                     checkpoint_path = checkpoint_directory_path + checkpoint_name
                     with open(f"{checkpoint_path}.json", "w") as json_file:
                         json.dump(dataset, json_file, indent=4)
-        else:  # Reasoning QA
-            # New approach: Extract sections using regex based on common MIMIC-III headings
-            sections = extract_discharge_summary_sections(discharge_summary)
-
-            # Get the initial presentation (typically admission note or chief complaint)
-            initial_presentation = get_initial_presentation(sections)
-
-            # Get subsequent steps from relevant sections in chronological order
-            subsequent_steps = get_subsequent_steps(sections)
-
-            # Create nested reasoning steps as JSON objects
-            reasoning_sections = []
-            previous_evidence = initial_presentation
-
-            for _, step in enumerate(subsequent_steps):
-                # For each step, create a question about what should be done next
-                question = "Based on the available information, what would be the next appropriate clinical step?"
-
-                section = {
-                    "Evidence": previous_evidence,
-                    "Question": question,
-                    "Expected Answer": step["content"],
-                }
-
-                # Update the evidence for the next question to include this step
-                previous_evidence += (
-                    f"\n\nThe previous clinical step was: {step['content']}"
-                )
-                reasoning_sections.append(section)
-
-            data_item = {
-                "Capability": capability_type,
-                "Evidence": initial_presentation,
-                "Sections": reasoning_sections,
-            }
-
-            dataset.append(data_item)
+        else:  # capability_type == Reasoning QA
+            chunks = chunk_discharge_summary(discharge_summary)
+            QA_set = create_QA_set(chunks)
+            dataset.append(QA_set)
 
             print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
 
+            # Save a copy of the dataset if the loop is at a checkpoint
             checkpoint_directory_path = "data/generations/checkpoints/"
             if (row + 1) % CHECKPOINT_INTERVAL == 0:
                 checkpoint_name = f"{row+1}-rows-{date}"
