@@ -3,3 +3,4 @@ hpc_requirements.txt
 .env
 data
 scratch
+mimicsid-env
