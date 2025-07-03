@@ -14,7 +14,7 @@ database_name = os.environ.get("DATABASE_NAME")
 database_port = os.environ.get("DATABASE_PORT")
 
 # Variable to flag where to save collected discharge summaries, default
-# is function.
+# is "function".
 SUMMARIES_DESTINATION = "function"
 
 
@@ -55,7 +55,7 @@ def call_mimic_iii(num_rows, max_summaries):
 
     query = """
         SELECT subject_id, text 
-        FROM mimiciii.noteevents
+        FROM public.noteevents
         ORDER BY row_id ASC 
         LIMIT %s;
     """

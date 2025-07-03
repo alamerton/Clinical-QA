@@ -24,8 +24,8 @@ NUMBER_OF_QA_PAIRS: int = 5
 # Control the ratio of reasoning and planning questions in the dataset
 # by setting the proportion of reasoning questions. They can be any
 # ratio.
-FACTUAL_Q_PROPORTION: int = 50
-REASONING_Q_PROPORTION: int = 50
+FACTUAL_Q_PROPORTION: int = 0
+REASONING_Q_PROPORTION: int = 1
 
 # Variable for starting the generation from a specific row in MIMIC-III.
 # Default value is 0. Set to 0 if generating new dataset.
@@ -33,7 +33,7 @@ CHECKPOINT: int = 0
 CHECKPOINT_INTERVAL: int = 1
 
 # Model for generating QA pairs
-QA_GENERATION_MODEL = "gpt-35-turbo-16k"
+QA_GENERATION_MODEL = "gpt-4o-mini"
 
 # Model for quality-checking QA pairs
 QUALITY_CHECKING_MODEL = QA_GENERATION_MODEL
@@ -60,6 +60,8 @@ def main():
         capability_type = select_capability_type(
             FACTUAL_Q_PROPORTION, REASONING_Q_PROPORTION
         )
+
+        print("Capability type: ", capability_type)
 
         if capability_type == "Factual QA":
             # Generate 4 factual questions using the discharge summary
@@ -111,18 +113,19 @@ def main():
                         json.dump(dataset, json_file, indent=4)
         else:  # capability_type == Reasoning QA
             chunks = chunk_discharge_summary(discharge_summary)
-            QA_set = create_QA_set(chunks)
-            dataset.append(QA_set)
+            print("CHUNKS: ", chunks)
+            # QA_set = create_QA_set(chunks)
+            # dataset.append(QA_set)
 
-            print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
+            # print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
 
-            # Save a copy of the dataset if the loop is at a checkpoint
-            checkpoint_directory_path = "data/generations/checkpoints/"
-            if (row + 1) % CHECKPOINT_INTERVAL == 0:
-                checkpoint_name = f"{row+1}-rows-{date}"
-                checkpoint_path = checkpoint_directory_path + checkpoint_name
-                with open(f"{checkpoint_path}.json", "w") as json_file:
-                    json.dump(dataset, json_file, indent=4)
+            # # Save a copy of the dataset if the loop is at a checkpoint
+            # checkpoint_directory_path = "data/generations/checkpoints/"
+            # if (row + 1) % CHECKPOINT_INTERVAL == 0:
+            #     checkpoint_name = f"{row+1}-rows-{date}"
+            #     checkpoint_path = checkpoint_directory_path + checkpoint_name
+            #     with open(f"{checkpoint_path}.json", "w") as json_file:
+            #         json.dump(dataset, json_file, indent=4)
 
     print("Complete")
     print(dataset)

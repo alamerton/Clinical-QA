@@ -63,8 +63,11 @@ def select_capability_type(factual_proportion: int, reasoning_proportion: int) -
     # Calculate the total weight to allow arbitrary proportions
     total_weight = factual_proportion + reasoning_proportion
 
+    if total_weight == 0:
+        raise ValueError("Total weight must be greater than zero.")
+
     # Generate a random number between 0 and the total weight
-    random_value = random.randint(0, total_weight)
+    random_value = random.randrange(total_weight)
 
     # Determine the selection based on the random value
-    return "Factual QA" if random_value <= factual_proportion else "Reasoning QA"
+    return "Factual QA" if random_value < factual_proportion else "Reasoning QA"
