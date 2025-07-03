@@ -113,7 +113,10 @@ def main():
                         json.dump(dataset, json_file, indent=4)
         else:  # capability_type == Reasoning QA
             chunks = chunk_discharge_summary(discharge_summary)
-            print("CHUNKS: ", chunks)
+
+            with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
+                json.dump(chunks, json_file, indent=4)
+
             # QA_set = create_QA_set(chunks)
             # dataset.append(QA_set)
 
