@@ -10,13 +10,15 @@ load_dotenv()
 
 def benchmark_with_azure(
     model_name,
-    discharge_summary,
+    context,
     question,
 ):
     if "gpt" in model_name:
         if "4o" in model_name:
-            endpoint = os.getenv("AZURE_GPT_4O_ENDPOINT")
-            api_key = os.getenv("AZURE_GPT_4O_API_KEY")
+            # endpoint = os.getenv("AZURE_GPT_4O_ENDPOINT")
+            # api_key = os.getenv("AZURE_GPT_4O_API_KEY")
+            endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+            api_key = os.getenv("AZURE_OPENAI_KEY")
         else:
             endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
             api_key = os.getenv("AZURE_OPENAI_KEY")
@@ -36,12 +38,9 @@ def benchmark_with_azure(
 
     user_prompt = f"""
         Your task is to answer a clinical question based on the
-        following discharge summary:\n{discharge_summary}\n\n
-        You should give your answer in the
-        following format:s
-        Answer: [your answer]
-        Question: {question}\n\n
-        Answer:
+        following discharge summary text:\n{context}\n\n
+        Please return your answer to the question and nothing else.
+        Here is the clinical question for you to answer: {question}
         """
 
     messages = [

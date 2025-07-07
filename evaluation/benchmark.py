@@ -10,8 +10,8 @@ from nltk.translate.meteor_score import single_meteor_score
 from nltk.tokenize import word_tokenize
 
 # from deepeval.metrics import GEval
-from deepeval.test_case import LLMTestCaseParams
-from deepeval.test_case import LLMTestCase
+# from deepeval.test_case import LLMTestCaseParams
+# from deepeval.test_case import LLMTestCase
 from datetime import datetime
 import spacy
 import textstat
@@ -26,8 +26,8 @@ from utils.evaluation.benchmark_with_azure import benchmark_with_azure
 from utils.evaluation.benchmark_locally import benchmark_locally
 from utils.misc import save_dataset
 
-DATASET_PATH = "data/generations/checkpoints/checkpoint.json"
-MODEL_NAME = "gpt-35-turbo-16k"
+DATASET_PATH = "data/generations/test_dataset.json"
+MODEL_NAME = "gpt-4o-mini"
 LOCAL = False
 CHECKPOINT = 0
 
@@ -71,54 +71,36 @@ def record_model_answers(dataset_path, model_name):
     print("Loading dataset")
     date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 
-    # Load JSON dataset and handle potential nesting
     with open(dataset_path, "r") as file:
         dataset = json.load(file)
-
-    # If dataset is stored under a key (e.g., "items"), adjust accordingly
-    if isinstance(dataset, dict) and "items" in dataset:
-        dataset = dataset["items"]
 
     results = []
 
     for index, item in tqdm(
-        enumerate(dataset), total=len(dataset), desc=f"Benchmarking model"
+        enumerate(dataset), total=len(dataset), desc="Benchmarking model"
     ):
-        if item["Capability"] == "Factual QA":
-            response = (benchmark_locally if LOCAL else benchmark_with_azure)(
-                model_name, item["Evidence"], item["Question"]
-            )
-            results.append(
-                {
-                    "Capability": "Factual QA",
-                    "Evidence": item["Evidence"],
-                    "Question": item["Question"],
-                    "Expected Answer": item["Expected Answer"],
-                    f"{model_name}_Response": response,
-                }
-            )
+        question = item["question"]
+        context = item["context"]
+        category = item.get("category", "Uncategorized")
+        expected_answer = item.get("answer", None)
 
-        elif item["Capability"] == "Reasoning QA":
-            section_results = []
-            for section in item.get("Sections", []):
-                response = (benchmark_locally if LOCAL else benchmark_with_azure)(
-                    model_name, section["Evidence"], section["Question"]
-                )
-                section_results.append(
-                    {
-                        "Evidence": section["Evidence"],
-                        "Question": section["Question"],
-                        "Expected Answer": section["Expected Answer"],
-                        f"{model_name}_Response": response,
-                    }
-                )
-            results.append(
-                {
-                    "Capability": "Reasoning QA",
-                    "Evidence": item["Evidence"],
-                    "Sections": section_results,
-                }
-            )
+        response = (benchmark_locally if LOCAL else benchmark_with_azure)(
+            model_name, context, question
+        )
+
+        result_entry = {
+            "Capability": "Reasoning QA",
+            "Category": category,
+            "Context": context,
+            "Question": question,
+            "Expected Answer": expected_answer,
+            f"{model_name}_Response": response,
+        }
+
+        # if expected_answer is not None:
+        #     result_entry["Expected Answer"] = expected_answer
+
+        results.append(result_entry)
 
         if (index + 1) % 2 == 0:
             checkpoint_directory = "data/model-answers/checkpoints/"
@@ -138,8 +120,6 @@ def record_model_answers(dataset_path, model_name):
     with open(output_path, "w") as json_file:
         json.dump(results, json_file, indent=4)
 
-    results_df = flatten_results_to_dataframe(results, model_name)
-    results_df.to_csv(f"{output_path}.csv", index=False)
     return results
 
 
@@ -456,7 +436,7 @@ def score_model(dataset, model_name):
 
 def main():
     model_answers = record_model_answers(DATASET_PATH, MODEL_NAME)
-    save_dataset(model_answers, directory="model-answers")
+    # save_dataset(model_answers, directory="model-answers")
     # model_answers = pd.read_csv("data/model-answers/Mistral-large.csv")
     # benchmarking_results = score_model(model_answers, MODEL_NAME)
     # save_dataset(benchmarking_results, directory="benchmarking-results")
