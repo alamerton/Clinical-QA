@@ -30,7 +30,7 @@ REASONING_Q_PROPORTION: int = 1
 # Variable for starting the generation from a specific row in MIMIC-III.
 # Default value is 0. Set to 0 if generating new dataset.
 CHECKPOINT: int = 0
-CHECKPOINT_INTERVAL: int = 1
+CHECKPOINT_INTERVAL: int = 5
 
 # Model for generating QA pairs
 QA_GENERATION_MODEL = "gpt-4o-mini"

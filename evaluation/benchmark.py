@@ -26,11 +26,11 @@ from utils.evaluation.benchmark_with_azure import benchmark_with_azure
 from utils.evaluation.benchmark_locally import benchmark_locally
 from utils.misc import save_dataset
 
-DATASET_PATH = "data/generations/test_dataset.json"
+DATASET_PATH = "data/generations/5-QA-pairs-2025-07-07 13:41:16.json"
 MODEL_NAME = "gpt-4o-mini"
 LOCAL = False
 CHECKPOINT = 0
-
+CHECKPOINT_INTERVAL = 5
 
 date = datetime.now()
 date = date.strftime("%Y-%m-%d %H:%M:%S")
@@ -102,7 +102,7 @@ def record_model_answers(dataset_path, model_name):
 
         results.append(result_entry)
 
-        if (index + 1) % 2 == 0:
+        if (index + 1) % CHECKPOINT_INTERVAL == 0:
             checkpoint_directory = "data/model-answers/checkpoints/"
             os.makedirs(checkpoint_directory, exist_ok=True)
             checkpoint_name = (

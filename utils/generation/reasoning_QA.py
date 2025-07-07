@@ -41,9 +41,9 @@ def create_QA_set(chunks, full_text):
     if all(k in chunk_map for k in ["chief-complaint", "history-of-present-illness"]):
         add(
             "Why was the patient admitted?",
-            f"Chief Complaint: {chunk_map['chief-complaint']['text']}\n\n"
-            f"History of Present Illness: {chunk_map['history-of-present-illness']['text']}",
-            chunk_map["history-of-present-illness"]["text"],
+            f"{chunk_map['chief-complaint']['text']}\n\n"
+            f"{chunk_map['history-of-present-illness']['text']}",
+            chunk_map["chief-complaint"]["text"],
             "Comprehension",
         )
 
@@ -51,7 +51,7 @@ def create_QA_set(chunks, full_text):
     if all(k in chunk_map for k in ["discharge-diagnosis", "followup-instructions"]):
         add(
             "What follow-up is appropriate for this diagnosis?",
-            f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
+            f"{chunk_map['discharge-diagnosis']['text']}",
             chunk_map["followup-instructions"]["text"],
             "Application and Analysis",
         )
@@ -60,9 +60,9 @@ def create_QA_set(chunks, full_text):
     if all(k in chunk_map for k in ["hospital-course", "discharge-diagnosis"]):
         add(
             "Evaluate the effectiveness of the treatment given.",
-            f"Hospital Course: {chunk_map['hospital-course']['text']}\n\n"
-            f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
-            chunk_map["discharge-diagnosis"]["text"],
+            f"{chunk_map['hospital-course']['text']}\n\n"
+            f"{chunk_map['discharge-diagnosis']['text']}",
+            "N/A",
             "Synthesis and Evaluation",
         )
 

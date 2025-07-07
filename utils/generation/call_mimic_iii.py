@@ -67,42 +67,41 @@ def call_mimic_iii(num_rows, max_summaries):
     current_summaries = []
 
     # For each row in array of discharge summaries
-    for row in rows:
+    for i, row in enumerate(rows):
         subject_id, discharge_summary = row
 
-        # Check if the next subject id is the same. If not:
         if subject_id != current_subject_id:
             if current_summaries:
-                # If multiple summaries have been collected for one
-                # patient, save them as a multiple-summary string.
                 if len(current_summaries) > 1:
                     combined_summaries = prepare_discharge_summaries(current_summaries)
-                    discharge_summaries.append(combined_summaries)
-                # If it's just one discharge summary, add it to the
-                # list.
+                    discharge_summaries.extend(
+                        [combined_summaries] * len(current_summaries)
+                    )
                 else:
-                    single_summary = current_summaries[0]
-                    discharge_summaries.append(single_summary)
-            # Continue to next row.
+                    discharge_summaries.append(current_summaries[0])
             current_subject_id = subject_id
             current_summaries = [discharge_summary]
-        # If the next subject_id is the same:
         else:
-            # And if the maximum number of summaries has not been
-            # reached, add another summary to the list for combination.
             if len(current_summaries) < max_summaries:
                 current_summaries.append(discharge_summary)
-            # Once the maximum number of summaries is reached:
             else:
-                # If multiple summaries have been collected for one
-                # patient, combine them and add them to the list
                 if len(current_summaries) > 1:
                     combined_summaries = prepare_discharge_summaries(current_summaries)
-                    discharge_summaries.append(combined_summaries)
-                # If there is just one summary, reduce and add it
+                    discharge_summaries.extend(
+                        [combined_summaries] * len(current_summaries)
+                    )
                 else:
-                    single_summary = current_summaries[0]
-                    discharge_summaries.append(single_summary)
+                    discharge_summaries.append(current_summaries[0])
+                current_summaries = [discharge_summary]
+
+    # Handle final batch after loop
+    if current_summaries:
+        if len(current_summaries) > 1:
+            combined_summaries = prepare_discharge_summaries(current_summaries)
+            discharge_summaries.append(combined_summaries)
+
+        else:
+            discharge_summaries.append(current_summaries[0])
 
     # Close the database connection
     cursor.close()
