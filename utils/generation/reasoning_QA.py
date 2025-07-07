@@ -11,77 +11,59 @@ def chunk_discharge_summary(discharge_summary):
     note: PredictedNote = section_predictor.predict([ds])[0]
     for section in note.sections.values():
         chunks.append({"id": section.id, "name": section.name, "text": section.text})
-    return chunks
+    return chunks, ds
 
 
-def create_QA_set(chunks):
+def create_QA_set(chunks, full_text):
     chunk_map = {chunk["name"]: chunk for chunk in chunks}
     qa_set = []
 
-    # Rule 1: HPI + Hospital Course -> Discharge Diagnosis
-    if all(
-        k in chunk_map
-        for k in [
-            "history-of-present-illness",
-            "hospital-course",
-            "discharge-diagnosis",
-        ]
-    ):
+    def add(question, context, answer, category):
         qa_set.append(
             {
-                "question": "Given the history of present illness and hospital course, what is the discharge diagnosis?",
-                "context": (
-                    f"History of Present Illness: {chunk_map['history-of-present-illness']['text']}\n\n"
-                    f"Hospital Course: {chunk_map['hospital-course']['text']}"
-                ),
-                "answer": chunk_map["discharge-diagnosis"]["text"],
+                "question": question,
+                "context": context,
+                "answer": answer,
+                "category": category,
             }
         )
 
-    # Rule 2: Discharge Diagnosis -> Discharge Medications
-    if all(k in chunk_map for k in ["discharge-diagnosis", "discharge-medications"]):
-        qa_set.append(
-            {
-                "question": "Given the discharge diagnosis, what medications were prescribed at discharge?",
-                "context": f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
-                "answer": chunk_map["discharge-medications"]["text"],
-            }
+    # Knowledge and Recall
+    if "discharge-diagnosis" in chunk_map:
+        add(
+            "What is the discharge diagnosis?",
+            full_text,
+            chunk_map["discharge-diagnosis"]["text"],
+            "Knowledge and Recall",
         )
 
-    # Rule 3: Chief Complaint + HPI -> Hospital Course
-    if all(
-        k in chunk_map
-        for k in ["chief-complaint", "history-of-present-illness", "hospital-course"]
-    ):
-        qa_set.append(
-            {
-                "question": "Based on the chief complaint and history of present illness, what was the hospital course?",
-                "context": (
-                    f"Chief Complaint: {chunk_map['chief-complaint']['text']}\n\n"
-                    f"History of Present Illness: {chunk_map['history-of-present-illness']['text']}"
-                ),
-                "answer": chunk_map["hospital-course"]["text"],
-            }
+    # Comprehension
+    if all(k in chunk_map for k in ["chief-complaint", "history-of-present-illness"]):
+        add(
+            "Why was the patient admitted?",
+            f"Chief Complaint: {chunk_map['chief-complaint']['text']}\n\n"
+            f"History of Present Illness: {chunk_map['history-of-present-illness']['text']}",
+            chunk_map["history-of-present-illness"]["text"],
+            "Comprehension",
         )
 
-    # Rule 4: Discharge Diagnosis -> Followup Instructions
+    # Application and Analysis
     if all(k in chunk_map for k in ["discharge-diagnosis", "followup-instructions"]):
-        qa_set.append(
-            {
-                "question": "Based on the discharge diagnosis, what follow-up instructions were given?",
-                "context": f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
-                "answer": chunk_map["followup-instructions"]["text"],
-            }
+        add(
+            "What follow-up is appropriate for this diagnosis?",
+            f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
+            chunk_map["followup-instructions"]["text"],
+            "Application and Analysis",
         )
 
-    # Rule 5: Hospital Course -> Procedures
-    if all(k in chunk_map for k in ["hospital-course", "procedures"]):
-        qa_set.append(
-            {
-                "question": "What procedures were performed during the hospital course?",
-                "context": f"Hospital Course: {chunk_map['hospital-course']['text']}",
-                "answer": chunk_map["procedures"]["text"],
-            }
+    # Synthesis and Evaluation
+    if all(k in chunk_map for k in ["hospital-course", "discharge-diagnosis"]):
+        add(
+            "Evaluate the effectiveness of the treatment given.",
+            f"Hospital Course: {chunk_map['hospital-course']['text']}\n\n"
+            f"Discharge Diagnosis: {chunk_map['discharge-diagnosis']['text']}",
+            chunk_map["discharge-diagnosis"]["text"],
+            "Synthesis and Evaluation",
         )
 
     return qa_set

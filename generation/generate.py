@@ -42,7 +42,7 @@ QUALITY_CHECKING_MODEL = QA_GENERATION_MODEL
 # prompt (when multiple consecutive summaries belong to same patient).
 # TODO: what is the optimal setting for this number? In the clinical setting,
 # how many summaries do clinicians actually look through?
-MAX_SUMMARIES: int = 3
+MAX_SUMMARIES: int = 1
 
 
 def main():
@@ -112,12 +112,12 @@ def main():
                     with open(f"{checkpoint_path}.json", "w") as json_file:
                         json.dump(dataset, json_file, indent=4)
         else:  # capability_type == Reasoning QA
-            chunks = chunk_discharge_summary(discharge_summary)
+            chunks, full_text = chunk_discharge_summary(discharge_summary)
 
             # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
             #     json.dump(chunks, json_file, indent=4)
 
-            QA_set = create_QA_set(chunks)
+            QA_set = create_QA_set(chunks, full_text)
             dataset.extend(QA_set)
 
             print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
