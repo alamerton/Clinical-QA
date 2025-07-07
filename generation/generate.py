@@ -114,21 +114,21 @@ def main():
         else:  # capability_type == Reasoning QA
             chunks = chunk_discharge_summary(discharge_summary)
 
-            with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
-                json.dump(chunks, json_file, indent=4)
+            # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
+            #     json.dump(chunks, json_file, indent=4)
 
-            # QA_set = create_QA_set(chunks)
-            # dataset.append(QA_set)
+            QA_set = create_QA_set(chunks)
+            dataset.extend(QA_set)
 
-            # print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
+            print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
 
-            # # Save a copy of the dataset if the loop is at a checkpoint
-            # checkpoint_directory_path = "data/generations/checkpoints/"
-            # if (row + 1) % CHECKPOINT_INTERVAL == 0:
-            #     checkpoint_name = f"{row+1}-rows-{date}"
-            #     checkpoint_path = checkpoint_directory_path + checkpoint_name
-            #     with open(f"{checkpoint_path}.json", "w") as json_file:
-            #         json.dump(dataset, json_file, indent=4)
+            # Save a copy of the dataset if the loop is at a checkpoint
+            checkpoint_directory_path = "data/generations/checkpoints/"
+            if (row + 1) % CHECKPOINT_INTERVAL == 0:
+                checkpoint_name = f"{row+1}-rows-{date}"
+                checkpoint_path = checkpoint_directory_path + checkpoint_name
+                with open(f"{checkpoint_path}.json", "w") as json_file:
+                    json.dump(dataset, json_file, indent=4)
 
     print("Complete")
     print(dataset)
