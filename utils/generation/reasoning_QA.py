@@ -28,7 +28,8 @@ def create_QA_set(chunks, full_text):
             }
         )
 
-    # Knowledge and Recall
+    # ------------ Knowledge and Recall ------------ #
+
     if "discharge-diagnosis" in chunk_map:
         add(
             "What is the discharge diagnosis?",
@@ -37,7 +38,8 @@ def create_QA_set(chunks, full_text):
             "Knowledge and Recall",
         )
 
-    # Comprehension
+    # ------------ Comprehension ------------ #
+
     if all(k in chunk_map for k in ["chief-complaint", "history-of-present-illness"]):
         add(
             "Why was the patient admitted?",
@@ -47,7 +49,57 @@ def create_QA_set(chunks, full_text):
             "Comprehension",
         )
 
-    # Application and Analysis
+    if all(
+        k in chunk_map
+        for k in [
+            "chief-complaint",
+            "history-of-present-illness",
+            "assessment-and-plan",
+        ]
+    ):
+        add(
+            "What is the most effective way to get an accurate diagnosis?",
+            f"{chunk_map['chief-complaint']['text']}\n\n"
+            f"{chunk_map['history-of-present-illness']['text']}",
+            chunk_map["assessment-and-plan"]["text"],
+            "Comprehension",
+        )
+
+    # Test evidence and reasoning
+    if any(
+        k in chunk_map
+        for k in [
+            "patient-test-information",
+            "labs",
+            "labs-imaging",
+            "imaging",
+            "findings",
+            "wet-read",
+        ]
+    ):
+        test_keys = [
+            k
+            for k in [
+                "patient-test-information",
+                "labs",
+                "labs-imaging",
+                "imaging",
+                "findings",
+                "wet-read",
+            ]
+            if k in chunk_map
+        ]
+        combined_text = "\n\n".join(chunk_map[k]["text"] for k in test_keys)
+
+        add(
+            "Were the tests important? If so, provide evidence and reasoning why.",
+            combined_text,
+            combined_text,
+            "Comprehension",
+        )
+
+    # ------------ Application and Analysis ------------ #
+
     if all(k in chunk_map for k in ["discharge-diagnosis", "followup-instructions"]):
         add(
             "What follow-up is appropriate for this diagnosis?",
@@ -56,7 +108,8 @@ def create_QA_set(chunks, full_text):
             "Application and Analysis",
         )
 
-    # Synthesis and Evaluation
+    # ------------ Synthesis and Evaluation ------------ #
+
     if all(k in chunk_map for k in ["hospital-course", "discharge-diagnosis"]):
         add(
             "Evaluate the effectiveness of the treatment given.",
