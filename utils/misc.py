@@ -9,7 +9,7 @@ sys.path.insert(0, parent_dir)
 
 from utils.generation.call_mimic_iii import call_mimic_iii
 
-NUMBER_OF_QA_PAIRS = 1000
+NUMBER_OF_QA_SETS = 1000
 MODEL_NAME = "gpt-4"
 
 
@@ -54,7 +54,7 @@ def calculate_max_discharge_summaries(model_name, limit=10):
     # a model
     biggest_ds_strings = []
     for i in range(0, limit):
-        strings = call_mimic_iii(NUMBER_OF_QA_PAIRS, i)
+        strings = call_mimic_iii(NUMBER_OF_QA_SETS, i)
         biggest_ds_strings.append(calculate_max_tokens(strings, model_name))
     return biggest_ds_strings
 

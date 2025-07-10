@@ -16,10 +16,11 @@ from utils.generation.check_quality_with_gpt import check_quality_with_gpt  # no
 from utils.generation.reasoning_QA import (  # noqa: E402
     chunk_discharge_summary,
     create_QA_set,
+    create_multistep_QA,
 )
 
 # Dataset size
-NUMBER_OF_QA_PAIRS: int = 5
+NUMBER_OF_QA_SETS: int = 1
 
 # Control the ratio of reasoning and planning questions in the dataset
 # by setting the proportion of reasoning questions. They can be any
@@ -49,11 +50,11 @@ def main():
     dataset = []
 
     print("Getting summaries for generation")
-    discharge_summaries = call_mimic_iii(NUMBER_OF_QA_PAIRS, MAX_SUMMARIES)
+    discharge_summaries = call_mimic_iii(NUMBER_OF_QA_SETS, MAX_SUMMARIES)
 
     print("Done\n\nGenerating Q-A pairs...")
 
-    for row in tqdm(range(CHECKPOINT, NUMBER_OF_QA_PAIRS)):
+    for row in tqdm(range(CHECKPOINT, NUMBER_OF_QA_SETS)):
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         discharge_summary = discharge_summaries[row]
@@ -103,7 +104,7 @@ def main():
 
                 dataset.append(data_item)
 
-                print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
+                print(f"{row+1}/{NUMBER_OF_QA_SETS}")
 
                 checkpoint_directory_path = "data/generations/checkpoints/"
                 if (row + 1) % CHECKPOINT_INTERVAL == 0:
@@ -114,13 +115,17 @@ def main():
         else:  # capability_type == Reasoning QA
             chunks, full_text = chunk_discharge_summary(discharge_summary)
 
+            # Save chunks as json to view
+
             # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
             #     json.dump(chunks, json_file, indent=4)
 
-            QA_set = create_QA_set(chunks, full_text)
+            # QA_set = create_QA_set(chunks, full_text)
+            QA_set = create_multistep_QA(chunks)
+
             dataset.extend(QA_set)
 
-            print(f"{row+1}/{NUMBER_OF_QA_PAIRS}")
+            print(f"{row+1}/{NUMBER_OF_QA_SETS}")
 
             # Save a copy of the dataset if the loop is at a checkpoint
             checkpoint_directory_path = "data/generations/checkpoints/"
@@ -134,7 +139,7 @@ def main():
     print(dataset)
 
     # Write dataset to output directory
-    output_path = f"""data/generations/{NUMBER_OF_QA_PAIRS}-QA-pairs-{date}"""
+    output_path = f"""data/generations/{NUMBER_OF_QA_SETS}-QA-pairs-{date}"""
     with open(f"{output_path}.json", "w") as json_file:
         json.dump(dataset, json_file, indent=4)
 

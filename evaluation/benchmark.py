@@ -22,11 +22,12 @@ import json
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
+
 from utils.evaluation.benchmark_with_azure import benchmark_with_azure
 from utils.evaluation.benchmark_locally import benchmark_locally
 from utils.misc import save_dataset
 
-DATASET_PATH = "data/generations/5-QA-pairs-2025-07-07 13:41:16.json"
+DATASET_PATH = "data/generations/5-QA-pairs-2025-07-07 14:28:26.json"
 MODEL_NAME = "gpt-4o-mini"
 LOCAL = False
 CHECKPOINT = 0
@@ -438,7 +439,7 @@ def main():
     model_answers = record_model_answers(DATASET_PATH, MODEL_NAME)
     # save_dataset(model_answers, directory="model-answers")
     # model_answers = pd.read_csv("data/model-answers/Mistral-large.csv")
-    # benchmarking_results = score_model(model_answers, MODEL_NAME)
+    benchmarking_results = score_model(model_answers, MODEL_NAME)
     # save_dataset(benchmarking_results, directory="benchmarking-results")
     # print(benchmarking_results)
 
