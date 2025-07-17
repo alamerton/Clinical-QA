@@ -61,94 +61,40 @@ def main():
         date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         discharge_summary = discharge_summaries[row]
-        capability_type = select_capability_type(
-            FACTUAL_Q_PROPORTION, REASONING_Q_PROPORTION
-        )
 
-        print("Capability type: ", capability_type)
+        # Method for using mimicsid for segmentation
+        chunks, full_text = chunk_discharge_summary(discharge_summary)
 
-        if capability_type == "Factual QA":
-            # Generate 4 factual questions using the discharge summary
-            for _ in range(0, 4):
-                data_item = {}
+        # Method for using an LLM for segmentation
+        # chunks = segment_ds_with_llm(
+        #     capability_type, QA_GENERATION_MODEL, discharge_summary
+        # )
 
-                quality_checking_result = ""
-                while "1" not in quality_checking_result:
-                    qa_string = call_gpt(
-                        QA_GENERATION_MODEL, discharge_summary, capability_type
-                    )
-                    print("QA String: ", qa_string)
+        # Save chunks as json to view
 
-                    while "Part 1: " not in qa_string or "Part 2: " not in qa_string:
-                        print("Regenerating...")
-                        qa_string = call_gpt(
-                            QA_GENERATION_MODEL, discharge_summary, capability_type
-                        )
+        # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
+        #     json.dump(chunks, json_file, indent=4)
 
-                    quality_checking_result = check_quality_with_gpt(
-                        qa_string, QUALITY_CHECKING_MODEL, capability_type
-                    )
-                    print("Quality checking result: ", quality_checking_result)
+        # Segmentation of chunks by clincal actions
 
-                qa_parts = re.split(r"\n*Part [12]:", qa_string)
-                qa_parts = [part.strip() for part in qa_parts if part.strip()]
+        clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
 
-                print(qa_parts)
+        # QA_set = create_QA_set(chunks, full_text)
+        # QA_set = create_multistep_QA(chunks)
 
-                question = qa_parts[0]
-                answer = qa_parts[1]
+        QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
 
-                data_item = {
-                    "Capability": capability_type,
-                    "Evidence": discharge_summary,
-                    "Question": question,
-                    "Expected Answer": answer,
-                }
+        dataset.extend(QA_set["questions"])
 
-                dataset.append(data_item)
+        print(f"{row+1}/{NUMBER_OF_QA_SETS}")
 
-                print(f"{row+1}/{NUMBER_OF_QA_SETS}")
-
-                checkpoint_directory_path = "data/generations/checkpoints/"
-                if (row + 1) % CHECKPOINT_INTERVAL == 0:
-                    checkpoint_name = f"{row+1}-rows-{date}"
-                    checkpoint_path = checkpoint_directory_path + checkpoint_name
-                    with open(f"{checkpoint_path}.json", "w") as json_file:
-                        json.dump(dataset, json_file, indent=4)
-        else:  # capability_type == Reasoning QA
-            # 1. Method for using mimicsid for segmentation
-            chunks, full_text = chunk_discharge_summary(discharge_summary)
-
-            # 2. Method for using an LLM for segmentation
-            # chunks = segment_ds_with_llm(
-            #     capability_type, QA_GENERATION_MODEL, discharge_summary
-            # )
-
-            # Save chunks as json to view
-
-            # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
-            #     json.dump(chunks, json_file, indent=4)
-
-            # Segmentation of chunks by clincal actions
-
-            clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
-
-            # QA_set = create_QA_set(chunks, full_text)
-            # QA_set = create_multistep_QA(chunks)
-
-            QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
-
-            dataset.extend(QA_set["questions"])
-
-            print(f"{row+1}/{NUMBER_OF_QA_SETS}")
-
-            # Save a copy of the dataset if the loop is at a checkpoint
-            checkpoint_directory_path = "data/generations/checkpoints/"
-            if (row + 1) % CHECKPOINT_INTERVAL == 0:
-                checkpoint_name = f"{row+1}-rows-{date}"
-                checkpoint_path = checkpoint_directory_path + checkpoint_name
-                with open(f"{checkpoint_path}.json", "w") as json_file:
-                    json.dump(dataset, json_file, indent=4)
+        # Save a copy of the dataset if the loop is at a checkpoint
+        checkpoint_directory_path = "data/generations/checkpoints/"
+        if (row + 1) % CHECKPOINT_INTERVAL == 0:
+            checkpoint_name = f"{row+1}-rows-{date}"
+            checkpoint_path = checkpoint_directory_path + checkpoint_name
+            with open(f"{checkpoint_path}.json", "w") as json_file:
+                json.dump(dataset, json_file, indent=4)
 
     print("Complete")
     print(dataset)
