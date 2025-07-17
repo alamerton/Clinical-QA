@@ -3,8 +3,11 @@ from zensols.mimic import Section
 from zensols.mimicsid import PredictedNote, ApplicationFactory
 from zensols.mimicsid.pred import SectionPredictor
 
-from generation.call_gpt import call_llm_for_segmentation
-from misc import parse_llm_segments
+from utils.generation.call_gpt import (
+    call_llm_for_section_segmentation,
+    call_llm_for_clinical_action_identification,
+)
+from utils.misc import parse_llm_segments
 
 
 def chunk_discharge_summary(discharge_summary):
@@ -17,14 +20,87 @@ def chunk_discharge_summary(discharge_summary):
     return chunks, ds
 
 
-def segment_ds_with_llm(model_name, discharge_summary):
+def segment_ds_with_llm(capability_type, model_name, discharge_summary):
+    # TODO: Change output format of LLM segmentation to match that of
+    # mimicsid (trello)
     chunks = []
     ds = discharge_summary.strip()
-    response = call_llm_for_segmentation(model_name, ds)
+    response = call_llm_for_section_segmentation(model_name, ds, capability_type)
     batch = parse_llm_segments(response)
     for chunk in batch:
         chunks.append(chunk)
     return chunks
+
+
+def identify_clinical_actions(model_name, chunks):
+    clinical_actions = []
+    for chunk in chunks:
+        response = call_llm_for_clinical_action_identification(model_name, chunk)
+        if "name" not in response:
+            continue  # skip irrelevant responses
+        batch = parse_llm_segments(response)
+        clinical_actions.extend(batch)
+    return clinical_actions
+
+
+def create_QA_from_clinical_actions(chunks, clinical_actions):
+    for chunk in chunks:
+        if "text" not in chunk or not chunk["text"].strip():
+            raise ValueError(f"Invalid chunk: {chunk}")
+
+    full_text = "".join([chunk["text"] for chunk in chunks])
+
+    action_spans = []
+    for action in clinical_actions:
+        action_text = action["text"]
+        start = full_text.find(action_text)
+        if start != -1:
+            end = start + len(action_text)
+            action_spans.append({"action": action, "start": start, "end": end})
+
+    action_spans.sort(key=lambda x: x["start"])
+
+    qa_pairs = []
+    last_end = 0
+    for span in action_spans:
+        evidence = full_text[last_end : span["start"]].strip()
+        if evidence:
+            qa_pairs.append(
+                {
+                    "evidence": evidence,
+                    "question": "What clinical action is appropriate given the following information?",
+                    "answer": span["action"]["text"],
+                    "expected_action_name": span["action"]["name"],
+                }
+            )
+        last_end = span["end"]
+
+    if last_end < len(full_text):
+        evidence = full_text[last_end:].strip()
+        if evidence:
+            qa_pairs.append(
+                {
+                    "evidence": evidence,
+                    "question": f"What clinical action is appropriate given the following information?\n\n{evidence}",
+                    "answer": None,
+                    "expected_action_name": None,
+                }
+            )
+
+    benchmark = {
+        "questions": [
+            {
+                "id": i,
+                "evidence": pair["evidence"],
+                "question": pair["question"],
+                "expected_answer": pair["answer"],
+                "action_name": pair["expected_action_name"],
+            }
+            for i, pair in enumerate(qa_pairs)
+        ]
+    }
+
+    return benchmark
 
 
 def create_QA_set(chunks, full_text):

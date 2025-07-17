@@ -4,6 +4,8 @@ from datetime import datetime
 import tiktoken
 import random
 import json
+import re
+import ast
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
@@ -76,17 +78,34 @@ def select_capability_type(factual_proportion: int, reasoning_proportion: int) -
 
 def parse_llm_segments(segment_string):
     """
-    Parses the LLM output string containing sectioned discharge summary
-    in dictionary-like format and returns a Python dictionary.
+    Parses LLM output expected to be a list of dictionaries:
+    [{"name": ..., "text": ...}, ...]
+    Returns the parsed list.
     """
+    segment_string = segment_string.strip()
+    segment_string = re.sub(r"^```(?:json)?\s*", "", segment_string)
+    segment_string = re.sub(r"\s*```$", "", segment_string).strip()
+    segment_string = (
+        segment_string.replace("“", '"')
+        .replace("”", '"')
+        .replace("‘", "'")
+        .replace("’", "'")
+    )
+
+    # Try JSON
     try:
-        segment_string = segment_string.strip()
-        if segment_string.startswith("```") and segment_string.endswith("```"):
-            segment_string = segment_string.strip("```").strip()
         return json.loads(segment_string)
     except json.JSONDecodeError:
-        # Fallback: attempt eval if the string uses single quotes or minor formatting issues
-        try:
-            return eval(segment_string, {"__builtins__": {}})
-        except Exception:
-            raise ValueError("Failed to parse LLM segment output")
+        pass
+
+    # Try ast.literal_eval
+    try:
+        result = ast.literal_eval(segment_string)
+        if isinstance(result, list) and all(
+            isinstance(x, dict) and "name" in x and "text" in x for x in result
+        ):
+            return result
+    except Exception:
+        pass
+
+    raise ValueError("Failed to parse LLM segment output")

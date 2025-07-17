@@ -166,16 +166,47 @@ def get_segmentation_prompt(discharge_summary_string):
     return (
         """You are an expert medical annotator tasked with segmenting clinical discharge summary from the MIMIC-III database. """,
         f"""
-            You are a clinical language model trained for precise document structuring. Segment the following MIMIC-III discharge summary into its standard sections. Identify and extract each section using canonical headers (e.g., "Chief Complaint", "History of Present Illness", "Past Medical History", "Medications on Admission", "Hospital Course", "Discharge Medications", "Discharge Diagnosis", "Follow-up Instructions", "Allergies", etc.). Return the result as a dictionary with section headers as keys and corresponding section text as values. If a section is missing, omit the key entirely. Do not hallucinate content. Use only the text provided.
+            You are a clinical language model trained for precise document structuring. Segment the following MIMIC-III discharge summary into its standard sections. Identify and extract each section using canonical headers (e.g., "Chief Complaint", "History of Present Illness", "Past Medical History", "Medications on Admission", "Hospital Course", "Discharge Medications", "Discharge Diagnosis", "Follow-up Instructions", "Allergies", etc.). Return the result as a list of dictionaries. Each dictionary must contain the fields "name" (the section header) and "text" (the section content). Only include sections explicitly present in the input.
 
             Input Discharge Summary:
             \"\"\"{discharge_summary_string}\"\"\"
 
             Output Format:
-            {{
-            "Chief Complaint": "...",
-            "History of Present Illness": "...",
+            [
+            {{"name": "Chief Complaint", "text": "..."}},
+            {{"name": "History of Present Illness", "text": "..."}},
             ...
-            }}
-            """,
+            ]
+        """,
     )
+
+
+def get_clinical_action_identification_prompt(discharge_summary_string):
+    return (
+        """You are an expert medical annotator tasked with segmenting clinical discharge summary from the MIMIC-III database. """,
+        f"""
+            You are given a discharge summary excerpt from the MIMIC-III noteevents table.
+
+            Discharge Summary:
+            \"\"\"{discharge_summary_string}\"\"\"
+
+            Your task is to identify and label all clinical actions within the text. Inspired by the CLIP dataset, clinical actions fall into four categories:
+
+            - I-Lab-related followup: instructions to obtain lab tests or monitor lab values post-discharge.
+            - I-Medication-related followups: instructions regarding medication changes, refills, dosage adjustments, or adherence.
+            - I-Appointment-related followup: directives to schedule, attend, or follow up with healthcare providers or specific clinics.
+            - I-Case-specific instructions for patient: tailored patient instructions based on their unique clinical situation or comorbidities.
+
+            Return the result as a list of dictionaries. Each dictionary must contain the fields "name" (the action label) and "text" (the corresponding phrase). Only include explicit clinical actions. Do not hallucinate or infer.
+
+            Output Format:
+            [
+            {{"name": "I-Lab-related followup", "text": "Repeat CBC in 2 weeks"}},
+            {{"name": "I-Appointment-related followup", "text": "Follow up with cardiology in 1 week"}},
+            ...
+            ]
+        """,
+    )
+
+
+# lines 204 and 205 may cause overfitting
