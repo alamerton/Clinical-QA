@@ -91,10 +91,10 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
         "questions": [
             {
                 "id": i,
-                "evidence": pair["evidence"],
+                "context": pair["evidence"],
                 "question": pair["question"],
-                "expected_answer": pair["answer"],
-                "action_name": pair["expected_action_name"],
+                "answer": pair["answer"],
+                "category": pair["expected_action_name"],
             }
             for i, pair in enumerate(qa_pairs)
         ]
