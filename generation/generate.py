@@ -17,6 +17,7 @@ from utils.generation.reasoning_QA import (  # noqa: E402
     chunk_discharge_summary,
     create_QA_set,
     create_multistep_QA,
+    segment_ds_with_llm,
 )
 
 # Dataset size
@@ -113,7 +114,11 @@ def main():
                     with open(f"{checkpoint_path}.json", "w") as json_file:
                         json.dump(dataset, json_file, indent=4)
         else:  # capability_type == Reasoning QA
-            chunks, full_text = chunk_discharge_summary(discharge_summary)
+            # 1. Method for using mimicsid for segmentation
+            # chunks, full_text = chunk_discharge_summary(discharge_summary)
+
+            # 2. Method for using an LLM for segmentation
+            chunks = segment_ds_with_llm(QA_GENERATION_MODEL, discharge_summary)
 
             # Save chunks as json to view
 
@@ -121,6 +126,7 @@ def main():
             #     json.dump(chunks, json_file, indent=4)
 
             # QA_set = create_QA_set(chunks, full_text)
+
             QA_set = create_multistep_QA(chunks)
 
             dataset.extend(QA_set)

@@ -3,6 +3,9 @@ from zensols.mimic import Section
 from zensols.mimicsid import PredictedNote, ApplicationFactory
 from zensols.mimicsid.pred import SectionPredictor
 
+from generation.call_gpt import call_llm_for_segmentation
+from misc import parse_llm_segments
+
 
 def chunk_discharge_summary(discharge_summary):
     chunks = []
@@ -12,6 +15,16 @@ def chunk_discharge_summary(discharge_summary):
     for section in note.sections.values():
         chunks.append({"id": section.id, "name": section.name, "text": section.text})
     return chunks, ds
+
+
+def segment_ds_with_llm(model_name, discharge_summary):
+    chunks = []
+    ds = discharge_summary.strip()
+    response = call_llm_for_segmentation(model_name, ds)
+    batch = parse_llm_segments(response)
+    for chunk in batch:
+        chunks.append(chunk)
+    return chunks
 
 
 def create_QA_set(chunks, full_text):

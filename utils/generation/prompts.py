@@ -160,3 +160,22 @@ def get_factual_qual_check_prompt(qa_string):
             {qa_string}
         """,
     )
+
+
+def get_segmentation_prompt(discharge_summary_string):
+    return (
+        """You are an expert medical annotator tasked with segmenting clinical discharge summary from the MIMIC-III database. """,
+        f"""
+            You are a clinical language model trained for precise document structuring. Segment the following MIMIC-III discharge summary into its standard sections. Identify and extract each section using canonical headers (e.g., "Chief Complaint", "History of Present Illness", "Past Medical History", "Medications on Admission", "Hospital Course", "Discharge Medications", "Discharge Diagnosis", "Follow-up Instructions", "Allergies", etc.). Return the result as a dictionary with section headers as keys and corresponding section text as values. If a section is missing, omit the key entirely. Do not hallucinate content. Use only the text provided.
+
+            Input Discharge Summary:
+            \"\"\"{discharge_summary_string}\"\"\"
+
+            Output Format:
+            {{
+            "Chief Complaint": "...",
+            "History of Present Illness": "...",
+            ...
+            }}
+            """,
+    )

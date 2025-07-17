@@ -3,6 +3,7 @@ import os
 from datetime import datetime
 import tiktoken
 import random
+import json
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
@@ -71,3 +72,21 @@ def select_capability_type(factual_proportion: int, reasoning_proportion: int) -
 
     # Determine the selection based on the random value
     return "Factual QA" if random_value < factual_proportion else "Reasoning QA"
+
+
+def parse_llm_segments(segment_string):
+    """
+    Parses the LLM output string containing sectioned discharge summary
+    in dictionary-like format and returns a Python dictionary.
+    """
+    try:
+        segment_string = segment_string.strip()
+        if segment_string.startswith("```") and segment_string.endswith("```"):
+            segment_string = segment_string.strip("```").strip()
+        return json.loads(segment_string)
+    except json.JSONDecodeError:
+        # Fallback: attempt eval if the string uses single quotes or minor formatting issues
+        try:
+            return eval(segment_string, {"__builtins__": {}})
+        except Exception:
+            raise ValueError("Failed to parse LLM segment output")
