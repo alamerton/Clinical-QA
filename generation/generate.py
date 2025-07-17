@@ -62,25 +62,9 @@ def main():
 
         discharge_summary = discharge_summaries[row]
 
-        # Method for using mimicsid for segmentation
         chunks, full_text = chunk_discharge_summary(discharge_summary)
 
-        # Method for using an LLM for segmentation
-        # chunks = segment_ds_with_llm(
-        #     capability_type, QA_GENERATION_MODEL, discharge_summary
-        # )
-
-        # Save chunks as json to view
-
-        # with open(f"data/playground/DS_chunks-{date}.json", "w") as json_file:
-        #     json.dump(chunks, json_file, indent=4)
-
-        # Segmentation of chunks by clincal actions
-
         clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
-
-        # QA_set = create_QA_set(chunks, full_text)
-        # QA_set = create_multistep_QA(chunks)
 
         QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
 
