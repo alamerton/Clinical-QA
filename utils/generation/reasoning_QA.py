@@ -152,17 +152,27 @@ def create_multistep_QA(chunks):
         context = "\n\n".join(
             chunk_map[k]["text"] for k in prompt_chunks if k in chunk_map
         )
-        answer = chunk_map[answer_chunk]["text"] if answer_chunk in chunk_map else "N/A"
-        qa_steps.append(
-            {
-                "question": question,
-                "context": context,
-                "answer": answer,
-                "category": category,
-            }
-        )
+        if answer_chunk in chunk_map:
+            answer = chunk_map[answer_chunk]["text"]
 
-    # Step 1: Predict hospital course from earlier info
+            qa_steps.append(
+                {
+                    "question": question,
+                    "context": context,
+                    "answer": answer,
+                    "category": category,
+                }
+            )
+
+    # Step 1: Predict assessment and plan from earlier info
+    step(
+        "What is the expected assessment and plan?",
+        ["chief-complaint", "history-of-present-illness"],
+        "assessment-and-plan",
+        "Next Clinical Steps",
+    )
+
+    # Step 2: Predict hospital course
     step(
         "What is the expected hospital course?",
         ["chief-complaint", "history-of-present-illness", "assessment-and-plan"],
@@ -191,7 +201,6 @@ def create_multistep_QA(chunks):
             "history-of-present-illness",
             "assessment-and-plan",
             "hospital-course",
-            "discharge-medications",
         ],
         "discharge-diagnosis",
         "Next Clinical Steps",
@@ -205,11 +214,80 @@ def create_multistep_QA(chunks):
             "history-of-present-illness",
             "assessment-and-plan",
             "hospital-course",
-            "discharge-medications",
             "discharge-diagnosis",
         ],
-        "followup-instructions",
+        "discharge-instructions",
         "Next Clinical Steps",
     )
 
     return qa_steps
+
+
+# def create_multistep_QA_leave_missing(chunks):
+#     chunk_map = {chunk["name"]: chunk for chunk in chunks}
+#     qa_steps = []
+#     step_id = 1
+
+#     sequence = [
+#         {
+#             "question": "What is the expected hospital course?",
+#             "prompt_keys": [
+#                 "chief-complaint",
+#                 "history-of-present-illness",
+#                 "assessment-and-plan",
+#             ],
+#             "answer_key": "hospital-course",
+#         },
+#         {
+#             "question": "What are the expected discharge medications?",
+#             "prompt_keys": [
+#                 "chief-complaint",
+#                 "history-of-present-illness",
+#                 "assessment-and-plan",
+#                 "hospital-course",
+#             ],
+#             "answer_key": "discharge-medications",
+#         },
+#         {
+#             "question": "What is the expected discharge diagnosis?",
+#             "prompt_keys": [
+#                 "chief-complaint",
+#                 "history-of-present-illness",
+#                 "assessment-and-plan",
+#                 "hospital-course",
+#             ],
+#             "answer_key": "discharge-diagnosis",
+#         },
+#         {
+#             "question": "What are the expected discharge instructions?",
+#             "prompt_keys": [
+#                 "chief-complaint",
+#                 "history-of-present-illness",
+#                 "assessment-and-plan",
+#                 "hospital-course",
+#                 "discharge-diagnosis",
+#             ],
+#             "answer_key": "followup-instructions",
+#         },
+#     ]
+
+#     for step in sequence:
+#         required = step["prompt_keys"] + [step["answer_key"]]
+#         if not all(k in chunk_map for k in required):
+#             break
+
+#         context = "\n\n".join(chunk_map[k]["text"] for k in step["prompt_keys"])
+#         answer = chunk_map[step["answer_key"]]["text"]
+
+#         qa_steps.append(
+#             {
+#                 "step_id": step_id,
+#                 "question": step["question"],
+#                 "context": context,
+#                 "expected_answer": answer,
+#                 "category": "Next Clinical Steps",
+#             }
+#         )
+#         step_id += 1
+
+#     return qa_steps

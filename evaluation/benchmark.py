@@ -27,8 +27,10 @@ from utils.evaluation.benchmark_with_azure import benchmark_with_azure
 from utils.evaluation.benchmark_locally import benchmark_locally
 from utils.misc import save_dataset
 
-DATASET_PATH = "data/generations/5-QA-pairs-2025-07-07 14:28:26.json"
-MODEL_NAME = "gpt-4o-mini"
+# I need to turn off Tunnelblick to use the KCL Azure endpoint
+
+DATASET_PATH = "data/generations/5-QA-sets-2025-07-10 11:49:54.json"
+MODEL_NAME = "gpt-4o-mini-chat"
 LOCAL = False
 CHECKPOINT = 0
 CHECKPOINT_INTERVAL = 5
@@ -38,34 +40,6 @@ date = date.strftime("%Y-%m-%d %H:%M:%S")
 
 nlp = spacy.load("en_core_web_md")
 rouge = Rouge()
-# g_eval_metric = GEval(
-#     name="g-eval",
-#     criteria="""
-#     Evaluate the quality of the generated text based on the ability of the LLM
-#     to summarize, identify, and arrange text, ancondad answer specific questions
-#     related to:
-#         1. Patient’s medical history
-#         2. Diagnoses made
-#         3. Procedures that were done
-#         4. Outcomes of procedures
-#         5. Changes in medication
-#         6. Complications
-#         7. Abnormalities
-#         8. Tests the patient has undergone
-#     """,
-#     evaluation_params=[LLMTestCaseParams.INPUT, LLMTestCaseParams.ACTUAL_OUTPUT],
-# )
-
-CLINICAL_ENTITIES = {
-    "PROBLEM": ["DISEASE", "SYNDROME", "DIAGNOSIS", "SIGN", "SYMPTOM"],
-    "TREATMENT": ["PROCEDURE", "TREATMENT", "THERAPY"],
-    "MEDICATION": ["DRUG", "CHEMICAL", "PHARMACEUTICAL"],
-    "TEST": ["TEST", "LABORATORY", "DIAGNOSTIC_PROCEDURE"],
-    "ANATOMY": ["ANATOMICAL_STRUCTURE", "BODY_PART", "ORGAN"],
-    "VITAL": ["VITAL_SIGN", "MEASUREMENT"],
-    "DEMOGRAPHICS": ["AGE", "GENDER", "RACE", "ETHNICITY"],
-    "TEMPORAL": ["DATE", "TIME", "DURATION", "FREQUENCY"],
-}
 
 
 def record_model_answers(dataset_path, model_name):
@@ -439,7 +413,7 @@ def main():
     model_answers = record_model_answers(DATASET_PATH, MODEL_NAME)
     # save_dataset(model_answers, directory="model-answers")
     # model_answers = pd.read_csv("data/model-answers/Mistral-large.csv")
-    benchmarking_results = score_model(model_answers, MODEL_NAME)
+    # benchmarking_results = score_model(model_answers, MODEL_NAME)
     # save_dataset(benchmarking_results, directory="benchmarking-results")
     # print(benchmarking_results)
 

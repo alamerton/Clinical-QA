@@ -20,7 +20,7 @@ from utils.generation.reasoning_QA import (  # noqa: E402
 )
 
 # Dataset size
-NUMBER_OF_QA_SETS: int = 1
+NUMBER_OF_QA_SETS: int = 5
 
 # Control the ratio of reasoning and planning questions in the dataset
 # by setting the proportion of reasoning questions. They can be any
@@ -139,7 +139,7 @@ def main():
     print(dataset)
 
     # Write dataset to output directory
-    output_path = f"""data/generations/{NUMBER_OF_QA_SETS}-QA-pairs-{date}"""
+    output_path = f"""data/generations/{NUMBER_OF_QA_SETS}-QA-sets-{date}"""
     with open(f"{output_path}.json", "w") as json_file:
         json.dump(dataset, json_file, indent=4)
 
