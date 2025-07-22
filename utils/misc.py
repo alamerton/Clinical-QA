@@ -16,11 +16,22 @@ NUMBER_OF_QA_SETS = 1000
 MODEL_NAME = "gpt-4"
 
 
-def save_dataset(dataset, directory: str):
-    date = datetime.now()
-    rows = len(dataset)
-    output_path = f"data/{directory}/{rows}-QA-pairs-{date}"
-    dataset.to_csv(f"{output_path}.csv")
+def save_dataset(dataset, directory: str, num_qa_sets):
+    date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    output_path = f"""data/{directory}/{num_qa_sets}-QA-sets-{date}"""
+    with open(f"{output_path}.json", "w") as json_file:
+        json.dump(dataset, json_file, indent=4)
+
+
+def save_checkpoint(
+    dataset, row, checkpoint_interval, directory="data/generations/checkpoints/"
+):
+    if (row + 1) % checkpoint_interval == 0:
+        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        checkpoint_name = f"{row+1}-rows-{date}"
+        checkpoint_path = directory + checkpoint_name
+        with open(f"{checkpoint_path}.json", "w") as json_file:
+            json.dump(dataset, json_file, indent=4)
 
 
 def count_tokens(text, model):
@@ -109,3 +120,14 @@ def parse_llm_segments(segment_string):
         pass
 
     raise ValueError("Failed to parse LLM segment output")
+
+
+def filter_segments(segments, min_sentences=1, min_words=10):
+    filtered = []
+    for seg in segments:
+        text = seg.get("text", "").strip()
+        sentences = re.split(r"[.!?]\s+", text)
+        word_count = len(text.split())
+        if len(sentences) >= min_sentences and word_count >= min_words:
+            filtered.append(seg)
+    return filtered

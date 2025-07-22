@@ -11,7 +11,11 @@ sys.path.insert(0, parent_dir)
 
 from utils.generation.call_gpt import call_gpt  # noqa: E402
 from utils.generation.call_mimic_iii import call_mimic_iii  # noqa: E402
-from utils.misc import select_capability_type  # noqa: E402
+from utils.misc import (
+    select_capability_type,
+    save_checkpoint,
+    save_dataset,
+)  # noqa: E402
 from utils.generation.check_quality_with_gpt import check_quality_with_gpt  # noqa: E402
 from utils.generation.reasoning_QA import (  # noqa: E402
     chunk_discharge_summary,
@@ -51,43 +55,17 @@ MAX_SUMMARIES: int = 1
 
 def main():
     dataset = []
-
     print("Getting summaries for generation")
     discharge_summaries = call_mimic_iii(NUMBER_OF_QA_SETS, MAX_SUMMARIES)
-
-    print("Done\n\nGenerating Q-A pairs...")
-
+    print("Done. Generating Q-A pairs...")
     for row in tqdm(range(CHECKPOINT, NUMBER_OF_QA_SETS)):
-        date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        discharge_summary = discharge_summaries[row]
-
-        chunks, full_text = chunk_discharge_summary(discharge_summary)
-
+        chunks = chunk_discharge_summary(discharge_summaries[row])
         clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
-
         QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
-
         dataset.extend(QA_set["questions"])
-
         print(f"{row+1}/{NUMBER_OF_QA_SETS}")
-
-        # Save a copy of the dataset if the loop is at a checkpoint
-        checkpoint_directory_path = "data/generations/checkpoints/"
-        if (row + 1) % CHECKPOINT_INTERVAL == 0:
-            checkpoint_name = f"{row+1}-rows-{date}"
-            checkpoint_path = checkpoint_directory_path + checkpoint_name
-            with open(f"{checkpoint_path}.json", "w") as json_file:
-                json.dump(dataset, json_file, indent=4)
-
-    print("Complete")
-    print(dataset)
-
-    # Write dataset to output directory
-    output_path = f"""data/generations/{NUMBER_OF_QA_SETS}-QA-sets-{date}"""
-    with open(f"{output_path}.json", "w") as json_file:
-        json.dump(dataset, json_file, indent=4)
-
+        save_checkpoint(dataset, row, CHECKPOINT_INTERVAL)
+    save_dataset(dataset, "generations", NUMBER_OF_QA_SETS)
     print("Dataset saved")
 
 

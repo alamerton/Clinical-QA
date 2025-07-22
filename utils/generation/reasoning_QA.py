@@ -7,7 +7,7 @@ from utils.generation.call_gpt import (
     call_llm_for_section_segmentation,
     call_llm_for_clinical_action_identification,
 )
-from utils.misc import parse_llm_segments
+from utils.misc import parse_llm_segments, filter_segments
 
 
 def chunk_discharge_summary(discharge_summary):
@@ -17,7 +17,7 @@ def chunk_discharge_summary(discharge_summary):
     note: PredictedNote = section_predictor.predict([ds])[0]
     for section in note.sections.values():
         chunks.append({"id": section.id, "name": section.name, "text": section.text})
-    return chunks, ds
+    return chunks
 
 
 def segment_ds_with_llm(capability_type, model_name, discharge_summary):
@@ -39,15 +39,12 @@ def identify_clinical_actions(model_name, chunks):
         if "name" not in response:
             continue  # skip irrelevant responses
         batch = parse_llm_segments(response)
-        clinical_actions.extend(batch)
+        filtered_batch = filter_segments(batch)
+        clinical_actions.extend(filtered_batch)
     return clinical_actions
 
 
 def create_QA_from_clinical_actions(chunks, clinical_actions):
-    for chunk in chunks:
-        if "text" not in chunk or not chunk["text"].strip():
-            raise ValueError(f"Invalid chunk: {chunk}")
-
     full_text = "".join([chunk["text"] for chunk in chunks])
 
     action_spans = []
@@ -68,7 +65,7 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
             qa_pairs.append(
                 {
                     "evidence": evidence,
-                    "question": "What clinical action is appropriate given the following information?",
+                    "question": "Predict the next clinical action in the discharge summary",
                     "answer": span["action"]["text"],
                     "expected_action_name": span["action"]["name"],
                 }
@@ -81,7 +78,7 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
             qa_pairs.append(
                 {
                     "evidence": evidence,
-                    "question": f"What clinical action is appropriate given the following information?\n\n{evidence}",
+                    "question": "Predict the next clinical action in the discharge summary",
                     "answer": None,
                     "expected_action_name": None,
                 }
@@ -97,9 +94,9 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
                 "category": pair["expected_action_name"],
             }
             for i, pair in enumerate(qa_pairs)
+            if pair["answer"] is not None and pair["expected_action_name"] is not None
         ]
     }
-
     return benchmark
 
 
