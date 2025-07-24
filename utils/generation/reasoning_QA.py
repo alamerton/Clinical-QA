@@ -33,6 +33,10 @@ def segment_ds_with_llm(capability_type, model_name, discharge_summary):
 
 
 def identify_clinical_actions(model_name, chunks):
+    """
+    Passes chunks of DS data to LLM, gets clinical actions, filters
+    empty and short responses, and returns list of clinical actions.
+    """
     clinical_actions = []
     for chunk in chunks:
         response = call_llm_for_clinical_action_identification(model_name, chunk)

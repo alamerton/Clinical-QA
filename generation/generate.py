@@ -61,11 +61,12 @@ def main():
     for row in tqdm(range(CHECKPOINT, NUMBER_OF_QA_SETS)):
         chunks = chunk_discharge_summary(discharge_summaries[row])
         clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
-        QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
-        dataset.extend(QA_set["questions"])
-        print(f"{row+1}/{NUMBER_OF_QA_SETS}")
+        # QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
+        # dataset.extend(QA_set["questions"])
+        dataset.extend(clinical_actions)
         save_checkpoint(dataset, row, CHECKPOINT_INTERVAL)
-    save_dataset(dataset, "generations", NUMBER_OF_QA_SETS)
+    # save_dataset(dataset, "generations", NUMBER_OF_QA_SETS)
+    save_dataset(dataset, "clinical_action_generation_tests", NUMBER_OF_QA_SETS)
     print("Dataset saved")
 
 

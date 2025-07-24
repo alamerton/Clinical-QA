@@ -29,7 +29,7 @@ from utils.misc import save_dataset
 
 # I need to turn off Tunnelblick to use the KCL Azure endpoint
 
-DATASET_PATH = "data/generations/" + "5-QA-sets-2025-07-22 11:31:20.json"
+DATASET_PATH = "data/generations/" + "3-rows-2025-07-22 11:59:57.json"
 MODEL_NAME = "gpt-4o-mini-chat"
 LOCAL = False
 CHECKPOINT = 0

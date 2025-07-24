@@ -192,27 +192,25 @@ def get_clinical_action_identification_prompt(discharge_summary_string):
 
             Your task is to identify and label all clinical actions within the text. For each clinical action, extract a meaningful, context-rich segment that fully captures the instruction and its relevant clinical context or conditions, not just short phrases. Include modifiers, reasoning, or clinical indications that clarify the action.
 
-            Each extracted segment must:
-
-            - Contain at least one complete sentence or more, providing richer clinical meaning.
-
-            - Clearly reflect the explicit clinical action and any conditions or rationale.
-
-            - Avoid minimal or fragmentary phrases.
+            Only extract interventions, diagnostics, procedures, medications ordered, scheduled, initiated, continued, or discontinued. Exclude observations, physical findings, assessments, or historical medication lists unless an explicit action is described.
 
             Return the result as a list of dictionaries. Each dictionary must contain the fields "name" (the action label) and "text" (the corresponding clinical action excerpt).
-
             Only include explicit clinical actions. Do not hallucinate or infer.
 
-            Each extracted text must be a complete sentence or multiple sentences that together convey the clinical action fully, including any relevant clinical context, rationale, or conditions.
+            The types of clinical actions and their descriptions are as follows:
+            - Appointment: appointments to be made by the PCP, or monitored to ensure the patient attends them.
+            - Lab: laboratory tests that either have results pending or need to be ordered by the PCP.
+            - Procedure: procedures that the PCP needs to either order, ensure another caregiver orders, or ensure the patient undergoes.
+            - Medication: medications that the PCP either needs to ensure that the patient is taking correctly, e.g., time-limited medications or new medications that may need dose adjustment.
+            - Imaging: imaging studies that either have results pending or need to be ordered by the PCP.
+            - Patient Instructions: post-discharge instructions that are directed to the pateint, so the PCP can ensure the patient understands and performs them.
+            - Other: other actionable information that is important to relay to the PCP but does not fall under existing aspects (e.g., the need to closely observe the patient's diet, or fax results to another provider).
 
-            If the clinical action appears within a paragraph, include the entire paragraph or all sentences necessary to preserve meaning.
+            For a full picture of the context of the clinical action, please concatenate the 1 preceding sentence and 1 following sentence for each clinical action identified.
 
-            Do not extract short phrases or fragments.
-
-            Ignore clinical actions that cannot be expressed as at least one full sentence.
-
-            The types of clinical actions are 'I-Lab-related followup', 'I-Medication-related followups', 'I-Appointment-related followup', and 'I-Case-specific instructions for patient'.
+            Some data should not be identified as a clinical action. Do not retrieve:
+            - (Appointment type): sentences that refer to 'as needed'.
+            - (Medication type): sentences describing additions to the medication list (but still include instructions to hold and restart medications, new medications with an end date, and medications requiring dosage adjustment).
 
             Output Format:
             [
