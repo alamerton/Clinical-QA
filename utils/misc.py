@@ -6,6 +6,7 @@ import random
 import json
 import re
 import ast
+import subprocess
 
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 sys.path.insert(0, parent_dir)
@@ -131,3 +132,29 @@ def filter_segments(segments, min_sentences=1, min_words=10):
         if len(sentences) >= min_sentences and word_count >= min_words:
             filtered.append(seg)
     return filtered
+
+
+def turn_tunnelblick_on():
+    print("Switching VPN on...")
+    subprocess.run(
+        [
+            "osascript",
+            "-e",
+            f'tell application "Tunnelblick" to connect "{
+                os.getenv("TUNNELBLICK_CONFIG")
+                }"',
+        ]
+    )
+
+
+def turn_tunnelblick_off():
+    print("Switching VPN off...")
+    subprocess.run(
+        [
+            "osascript",
+            "-e",
+            f'tell application "Tunnelblick" to disconnect "{
+                os.getenv("TUNNELBLICK_CONFIG")
+                }"',
+        ]
+    )
