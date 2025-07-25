@@ -140,9 +140,7 @@ def turn_tunnelblick_on():
         [
             "osascript",
             "-e",
-            f'tell application "Tunnelblick" to connect "{
-                os.getenv("TUNNELBLICK_CONFIG")
-                }"',
+            f'tell application "Tunnelblick" to connect "{os.getenv("TUNNELBLICK_CONFIG")}"',
         ]
     )
 
@@ -153,8 +151,6 @@ def turn_tunnelblick_off():
         [
             "osascript",
             "-e",
-            f'tell application "Tunnelblick" to disconnect "{
-                os.getenv("TUNNELBLICK_CONFIG")
-                }"',
+            f'tell application "Tunnelblick" to disconnect "{os.getenv("TUNNELBLICK_CONFIG")}"',
         ]
     )

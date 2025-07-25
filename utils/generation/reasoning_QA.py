@@ -49,6 +49,11 @@ def identify_clinical_actions(model_name, chunks):
 
 
 def create_QA_from_clinical_actions(chunks, clinical_actions):
+    """
+    Given DS chunks and the clinical actions within them as inputs,
+    segment the DS by the clinical actions and produce QA sets from
+    them.
+    """
     full_text = "".join([chunk["text"] for chunk in chunks])
 
     action_spans = []
@@ -98,7 +103,6 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
                 "category": pair["expected_action_name"],
             }
             for i, pair in enumerate(qa_pairs)
-            if pair["answer"] is not None and pair["expected_action_name"] is not None
         ]
     }
     return benchmark
