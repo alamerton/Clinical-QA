@@ -136,6 +136,7 @@ def filter_segments(segments, min_sentences=1, min_words=10):
 
 def turn_tunnelblick_on():
     print("Switching VPN on...")
+
     subprocess.run(
         [
             "osascript",
@@ -147,6 +148,13 @@ def turn_tunnelblick_on():
 
 def turn_tunnelblick_off():
     print("Switching VPN off...")
+    subprocess.run(
+        [
+            "osascript",
+            "-e",
+            f'tell application "Tunnelblick" to disconnect "{os.getenv("TUNNELBLICK_CONFIG")}"',
+        ]
+    )
     subprocess.run(
         [
             "osascript",

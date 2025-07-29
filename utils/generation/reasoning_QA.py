@@ -6,6 +6,7 @@ from zensols.mimicsid.pred import SectionPredictor
 from utils.generation.call_gpt import (
     call_llm_for_section_segmentation,
     call_llm_for_clinical_action_identification,
+    call_llm_for_clinical_action_question,
 )
 from utils.misc import parse_llm_segments, filter_segments
 
@@ -52,47 +53,53 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
     """
     Given DS chunks and the clinical actions within them as inputs,
     segment the DS by the clinical actions and produce QA sets from
-    them.
+    them. Improved to capture repeated and overlapping actions and
+    preserve coherent context.
     """
+    import re
+
     full_text = "".join([chunk["text"] for chunk in chunks])
 
+    # Identify all occurrences of each action text using regex for duplicates
     action_spans = []
     for action in clinical_actions:
-        action_text = action["text"]
-        start = full_text.find(action_text)
-        if start != -1:
-            end = start + len(action_text)
+        action_text = re.escape(action["text"])
+        for match in re.finditer(action_text, full_text):
+            start = match.start()
+            end = match.end()
             action_spans.append({"action": action, "start": start, "end": end})
 
-    action_spans.sort(key=lambda x: x["start"])
-
-    qa_pairs = []
-    last_end = 0
+    # Remove duplicates (identical start/end/action) to avoid noise
+    seen = set()
+    unique_spans = []
     for span in action_spans:
-        evidence = full_text[last_end : span["start"]].strip()
+        key = (span["start"], span["end"], span["action"]["text"])
+        if key not in seen:
+            seen.add(key)
+            unique_spans.append(span)
+    action_spans = sorted(unique_spans, key=lambda x: x["start"])
+
+    # Generate QA pairs from coherent segments between actions
+    qa_pairs = []
+    for i in range(len(action_spans)):
+        current_span = action_spans[i]
+        prev_end = action_spans[i - 1]["end"] if i > 0 else 0
+        evidence = full_text[prev_end : current_span["start"]].strip()
+        answer = current_span["action"]["text"]
+
         if evidence:
             qa_pairs.append(
                 {
                     "evidence": evidence,
-                    "question": "Predict the next clinical action in the discharge summary",
-                    "answer": span["action"]["text"],
-                    "expected_action_name": span["action"]["name"],
-                }
-            )
-        last_end = span["end"]
-
-    if last_end < len(full_text):
-        evidence = full_text[last_end:].strip()
-        if evidence:
-            qa_pairs.append(
-                {
-                    "evidence": evidence,
-                    "question": "Predict the next clinical action in the discharge summary",
-                    "answer": None,
-                    "expected_action_name": None,
+                    "question": call_llm_for_clinical_action_question(
+                        "gpt-4o-mini-chat", answer
+                    ),
+                    "answer": answer,
+                    "expected_action_name": current_span["action"]["name"],
                 }
             )
 
+    # Final check: no trailing QA without context
     benchmark = {
         "questions": [
             {
@@ -103,6 +110,7 @@ def create_QA_from_clinical_actions(chunks, clinical_actions):
                 "category": pair["expected_action_name"],
             }
             for i, pair in enumerate(qa_pairs)
+            if pair["answer"] is not None and pair["expected_action_name"] is not None
         ]
     }
     return benchmark

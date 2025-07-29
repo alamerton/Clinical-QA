@@ -14,6 +14,7 @@ from utils.generation.prompts import (
     get_reasoning_generation_prompt,
     get_segmentation_prompt,
     get_clinical_action_identification_prompt,
+    get_clinical_question_generation_prompt,
 )
 
 load_dotenv()
@@ -135,6 +136,41 @@ def call_llm_for_clinical_action_identification(model_name, discharge_summary_st
     system_message, user_prompt = get_clinical_action_identification_prompt(
         discharge_summary_string
     )
+
+    for i in range(0, max_retries):
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[
+                    {"role": "system", "content": system_message},
+                    {"role": "user", "content": user_prompt},
+                ],
+                max_tokens=999,
+                temperature=1,
+            )
+            return response.choices[0].message.content
+
+        except HttpResponseError as e:
+            if "429" in str(e):
+                print(f"Rate limit exceeded. Attempt {i + 1} of {max_retries}.")
+                time.sleep(retry_delay)
+                retry_delay *= 2
+            else:
+                raise
+        raise RuntimeError("Maximum retries exceeded.")
+
+
+def call_llm_for_clinical_action_question(model_name, action):
+    max_retries = 10
+    retry_delay = 5
+
+    client = AzureOpenAI(
+        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        api_key=os.getenv("AZURE_OPENAI_KEY"),
+        api_version=os.getenv("AZURE_API_VERSION"),
+    )
+
+    system_message, user_prompt = get_clinical_question_generation_prompt(action)
 
     for i in range(0, max_retries):
         try:

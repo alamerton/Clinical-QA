@@ -195,7 +195,7 @@ def get_clinical_action_identification_prompt(discharge_summary_string):
             Only extract interventions, diagnostics, procedures, medications ordered, scheduled, initiated, continued, or discontinued. Exclude observations, physical findings, assessments, or historical medication lists unless an explicit action is described.
 
             Return the result as a list of dictionaries. Each dictionary must contain the fields "name" (the action label) and "text" (the corresponding clinical action excerpt).
-            Only include explicit clinical actions. Do not hallucinate or infer.
+            Only include explicit clinical actions. Do not hallucinate or infer. You MUST return the EXACT characters identified in the discharge summary.
 
             The types of clinical actions and their descriptions are as follows:
             - Appointment: appointments to be made by the PCP, or monitored to ensure the patient attends them.
@@ -206,10 +206,16 @@ def get_clinical_action_identification_prompt(discharge_summary_string):
             - Patient Instructions: post-discharge instructions that are directed to the pateint, so the PCP can ensure the patient understands and performs them.
             - Other: other actionable information that is important to relay to the PCP but does not fall under existing aspects (e.g., the need to closely observe the patient's diet, or fax results to another provider).
 
+            Here are some examples of clinical actions from the CLIP dataset to use as a guide:
+            - Pulmonary appointment: Monday 10-25 3:15. [I-Appointment-related followup, [Case-specific instructions for patient]
+            - Furosemide 20mg Tablet Sig: One (1) Tablet PO Q12H (every 12 hours) for 7 days. [Medication-related followups]
+            - Dear Mr. Gonzalez, You were admitted with a GI bleed likely due to diverticulosis. [Case-specific instructions for patient]
+            - Dr. Mcdonald, 4 weeks Dr. Davila in 2 weeks return to Oncology 2 in 07-31 weeks for staple removal and wound check [Appointment-related followup, Case-specific instructions for patient]
+
             For a full picture of the context of the clinical action, please concatenate the 1 preceding sentence and 1 following sentence for each clinical action identified.
 
             Some data should not be identified as a clinical action. Do not retrieve:
-            - (Appointment type): sentences that refer to 'as needed'.
+            - (Appointment type): sentences that refer to as needed.
             - (Medication type): sentences describing additions to the medication list (but still include instructions to hold and restart medications, new medications with an end date, and medications requiring dosage adjustment).
 
             Output Format:
@@ -218,5 +224,18 @@ def get_clinical_action_identification_prompt(discharge_summary_string):
             {{"name": "[type of clinical action]", "text": "[text from the discharge summary]"}},
             ...
             ]
+        """,
+    )
+
+
+def get_clinical_question_generation_prompt(action):
+    return (
+        """You are an expert medical annotator tasked with segmenting clinical discharge summary from the MIMIC-III database. """,
+        f"""
+            Please create a question to go in an LLM benchmark.
+            The question should prompt the LLM to predict the next clinical action in a MIMIC-III discharge summary
+            Here is the clinical action the LLM needs to predict:
+            {action}
+            Please construct a question that helps the LLM identify what kind of thing it needs to predict, without making the prediction too easy.
         """,
     )

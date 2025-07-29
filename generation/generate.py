@@ -56,18 +56,18 @@ MAX_SUMMARIES: int = 1
 
 def main():
     dataset = []
-    print("Getting summaries for generation")
     turn_tunnelblick_on()
+    print("Getting summaries for generation")
     discharge_summaries = call_mimic_iii(NUMBER_OF_QA_SETS, MAX_SUMMARIES)
     turn_tunnelblick_off()
     print("Done. Generating Q-A pairs...")
     for row in tqdm(range(CHECKPOINT, NUMBER_OF_QA_SETS)):
         chunks = chunk_discharge_summary(discharge_summaries[row])
-        print("CHUNKS: ", chunks)
+        # print("CHUNKS: ", chunks)
         clinical_actions = identify_clinical_actions(QA_GENERATION_MODEL, chunks)
-        print("CLINICAL ACTIONS: ", clinical_actions)
+        # print("CLINICAL ACTIONS: ", clinical_actions)
         QA_set = create_QA_from_clinical_actions(chunks, clinical_actions)
-        print("QA SET: ", QA_set)
+        # print("QA SET: ", QA_set)
         dataset.extend(QA_set["questions"])
         # dataset.extend(clinical_actions)
         save_checkpoint(dataset, row, CHECKPOINT_INTERVAL)
