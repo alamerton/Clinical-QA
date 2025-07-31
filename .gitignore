@@ -4,3 +4,4 @@ hpc_requirements.txt
 data
 scratch
 mimicsid-env
+utils/generation/prompts.py
